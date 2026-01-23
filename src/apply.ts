@@ -139,8 +139,8 @@ export async function applyToJob(
     }
 
     // Check URL change (might indicate success)
-    const currentUrl = page.url();
-    if (!currentUrl.includes(job.id)) {
+    const finalUrl = page.url();
+    if (!finalUrl.includes(job.id)) {
       logger.success(`Application likely successful for: ${job.title} (redirected)`);
       return { success: true, alreadyApplied: false, skipped: false, employerName };
     }
