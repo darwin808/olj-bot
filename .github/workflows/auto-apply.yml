@@ -1,0 +1,64 @@
+name: Auto Apply to Jobs
+
+on:
+  schedule:
+    # Runs at 9 AM UTC daily (5 PM PHT)
+    - cron: '0 9 * * *'
+  workflow_dispatch: # Allow manual trigger
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install chromium
+
+      - name: Download previous state
+        uses: actions/download-artifact@v4
+        with:
+          name: applied-jobs-state
+          path: data/
+        continue-on-error: true # First run won't have state
+
+      - name: Run automation
+        env:
+          ONLINEJOBS_EMAIL: ${{ secrets.ONLINEJOBS_EMAIL }}
+          ONLINEJOBS_PASSWORD: ${{ secrets.ONLINEJOBS_PASSWORD }}
+          HEADLESS: 'true'
+          DRY_RUN: 'false'
+        run: npm run dev
+
+      - name: Upload state
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: applied-jobs-state
+          path: data/applied-jobs.json
+          retention-days: 90
+
+      - name: Upload logs
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: logs-${{ github.run_number }}
+          path: logs/
+          retention-days: 30
+
+      - name: Upload error screenshots
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: screenshots-${{ github.run_number }}
+          path: screenshots/
+          retention-days: 30
