@@ -44,10 +44,11 @@ export async function applyToJob(
       return { success: false, alreadyApplied: false, skipped: true, employerName };
     }
 
-    // Check if already applied
-    const alreadyApplied = await page.locator(SELECTORS.JOB_PAGE.ALREADY_APPLIED).first().isVisible().catch(() => false);
-    if (alreadyApplied) {
-      logger.warn(`Already applied to: ${job.title}`);
+    // Check if already applied - look for "Applied" button or text
+    const alreadyAppliedBtn = await page.locator('button:has-text("Applied")').first().isVisible().catch(() => false);
+    const alreadyAppliedText = await page.locator('text="Date Applied"').first().isVisible().catch(() => false);
+    if (alreadyAppliedBtn || alreadyAppliedText) {
+      logger.info(`Already applied to: ${job.title}`);
       return { success: false, alreadyApplied: true, skipped: false, employerName };
     }
 
