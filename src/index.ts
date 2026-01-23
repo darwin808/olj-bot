@@ -6,6 +6,8 @@ import { searchJobs } from './search';
 import { applyToJob } from './apply';
 import { logger } from './logger';
 
+const MAX_JOBS_TO_FETCH = 30; // Fetch more jobs to have enough candidates
+
 async function main(): Promise<void> {
   logger.info('='.repeat(50));
   logger.info('OnlineJobs.ph Job Application Automation');
@@ -35,11 +37,11 @@ async function main(): Promise<void> {
       logger.info('-'.repeat(40));
       logger.info(`Processing search term: "${searchTerm}"`);
 
-      // Search for jobs
+      // Search for more jobs than needed (to have candidates if some are already applied)
       const jobs = await searchJobs(
         page,
         searchTerm,
-        config.jobsPerSearchTerm,
+        MAX_JOBS_TO_FETCH,
         config.blockedEmployers,
         state
       );
@@ -49,12 +51,21 @@ async function main(): Promise<void> {
         continue;
       }
 
-      // Apply to each job
+      // Track successful applications for this search term
+      let appliedForTerm = 0;
+      const targetForTerm = config.jobsPerSearchTerm;
+
+      // Apply to jobs until we reach target or run out of candidates
       for (const job of jobs) {
+        // Stop if we've reached target for this term
+        if (appliedForTerm >= targetForTerm) {
+          logger.info(`Reached target of ${targetForTerm} applications for "${searchTerm}"`);
+          break;
+        }
+
         // Double-check we haven't applied (in case state changed)
         if (state.hasApplied(job.id)) {
-          logger.debug(`Skipping ${job.id} - already applied`);
-          totalSkipped++;
+          logger.debug(`Skipping ${job.id} - already in local state`);
           continue;
         }
 
@@ -64,9 +75,10 @@ async function main(): Promise<void> {
 
         if (result.skipped) {
           // Blocked employer - skip without marking as applied
+          logger.debug(`Skipped ${job.id} - blocked employer`);
           totalSkipped++;
         } else if (result.alreadyApplied) {
-          // Mark as applied in our state even if website says already applied
+          // Mark as applied in our state so we don't try again
           state.markAsApplied({
             id: job.id,
             title: job.title,
@@ -74,7 +86,9 @@ async function main(): Promise<void> {
             searchTerm: job.searchTerm,
             url: job.url
           });
+          logger.info(`Already applied to ${job.title} - trying next job`);
           totalSkipped++;
+          // Don't count towards target, try next job
         } else if (result.success) {
           // Mark as applied
           state.markAsApplied({
@@ -85,13 +99,20 @@ async function main(): Promise<void> {
             url: job.url
           });
           totalApplied++;
+          appliedForTerm++;
+          logger.success(`Applied ${appliedForTerm}/${targetForTerm} for "${searchTerm}"`);
         } else {
           logger.error(`Failed to apply to ${job.title}: ${result.error || 'Unknown error'}`);
           totalFailed++;
+          // Don't count towards target, try next job
         }
 
         // Rate limiting - wait between applications
         await page.waitForTimeout(2000);
+      }
+
+      if (appliedForTerm < targetForTerm) {
+        logger.warn(`Only applied to ${appliedForTerm}/${targetForTerm} jobs for "${searchTerm}" (ran out of candidates)`);
       }
     }
 
@@ -100,7 +121,7 @@ async function main(): Promise<void> {
     logger.info('SUMMARY');
     logger.info('='.repeat(50));
     logger.info(`Total applied: ${totalApplied}`);
-    logger.info(`Total skipped (already applied): ${totalSkipped}`);
+    logger.info(`Total skipped (already applied/blocked): ${totalSkipped}`);
     logger.info(`Total failed: ${totalFailed}`);
     logger.info(`Total jobs in state: ${state.getAppliedCount()}`);
     logger.info('='.repeat(50));

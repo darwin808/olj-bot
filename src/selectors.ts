@@ -29,7 +29,7 @@ export const SELECTORS = {
     EMPLOYER: '.employer-name, .company-name',
     JOB_ID_INPUT: 'input[name="job_id"]',
     APPLY_BUTTON: 'button[value="Apply For This Job"], button:has-text("Apply For This Job"), button.btn-success:has-text("Apply"), a:has-text("Apply For This Job")',
-    ALREADY_APPLIED: 'text="already applied", text="Already Applied", text="You have already applied", .applied-badge, button:disabled:has-text("Applied")'
+    ALREADY_APPLIED: 'button.btn-danger:has-text("Applied"), button:disabled:has-text("Applied"), text="Date Applied"'
   },
 
   APPLICATION: {
