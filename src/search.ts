@@ -95,8 +95,18 @@ async function extractJobsFromPage(page: Page, searchTerm: string): Promise<Job[
         if (!jobId || seenIds.has(jobId)) continue;
         seenIds.add(jobId);
 
-        // Extract title from link text
-        const title = await linkElement.textContent().catch(() => null);
+        // Extract title from link text, or fallback to URL slug
+        let title = await linkElement.textContent().catch(() => null);
+        title = title?.trim() || null;
+
+        // If title is empty, extract from URL slug
+        if (!title) {
+          // /jobseekers/job/Design-Engineer-Build-with-React-1561113 -> Design Engineer Build with React
+          const slugMatch = href.match(/\/job\/(.+)-\d+$/);
+          if (slugMatch) {
+            title = slugMatch[1].replace(/-/g, ' ');
+          }
+        }
 
         const fullUrl = href.startsWith('http') ? href : `${URLS.BASE}${href}`;
 

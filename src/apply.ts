@@ -28,7 +28,11 @@ export async function applyToJob(
       await page.goto(job.url, { waitUntil: 'domcontentloaded' });
     });
 
-    await page.waitForTimeout(1500);
+    await page.waitForTimeout(2000);
+
+    // Log current URL for debugging
+    const currentUrl = page.url();
+    logger.debug(`On page: ${currentUrl}`);
 
     // Get employer name from job page
     const employerName = await getEmployerFromJobPage(page);
@@ -47,11 +51,20 @@ export async function applyToJob(
       return { success: false, alreadyApplied: true, skipped: false, employerName };
     }
 
-    // Find apply button
-    const applyButton = page.locator(SELECTORS.JOB_PAGE.APPLY_BUTTON).first();
-    const applyButtonVisible = await applyButton.isVisible().catch(() => false);
+    // Find apply button - try multiple approaches
+    let applyButton = page.locator(SELECTORS.JOB_PAGE.APPLY_BUTTON).first();
+    let applyButtonVisible = await applyButton.isVisible().catch(() => false);
 
+    // Fallback: try finding any button with "Apply" text
     if (!applyButtonVisible) {
+      applyButton = page.locator('button:has-text("Apply"), a.btn:has-text("Apply")').first();
+      applyButtonVisible = await applyButton.isVisible().catch(() => false);
+    }
+
+    // Log what buttons we can see for debugging
+    if (!applyButtonVisible) {
+      const allButtons = await page.locator('button').allTextContents().catch(() => []);
+      logger.debug(`Buttons on page: ${allButtons.slice(0, 5).join(', ')}`);
       logger.warn(`Apply button not found for: ${job.title}`);
       await takeScreenshot(`no-apply-button-${job.id}`, true);
       return { success: false, alreadyApplied: false, skipped: false, error: 'Apply button not found', employerName };
