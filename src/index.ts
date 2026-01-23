@@ -6,7 +6,7 @@ import { searchJobs } from './search';
 import { applyToJob } from './apply';
 import { logger } from './logger';
 
-const MAX_JOBS_TO_FETCH = 30; // Fetch more jobs to have enough candidates
+const MAX_JOBS_TO_FETCH = 20; // Fetch enough candidates without triggering rate limits
 
 async function main(): Promise<void> {
   logger.info('='.repeat(50));
@@ -107,8 +107,9 @@ async function main(): Promise<void> {
           // Don't count towards target, try next job
         }
 
-        // Rate limiting - wait between applications
-        await page.waitForTimeout(2000);
+        // Rate limiting - random delay between 3-6 seconds to appear more human
+        const delay = 3000 + Math.random() * 3000;
+        await page.waitForTimeout(delay);
       }
 
       if (appliedForTerm < targetForTerm) {

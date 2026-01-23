@@ -30,7 +30,7 @@ export async function searchJobs(
   });
 
   // Wait for page to load
-  await page.waitForTimeout(2000);
+  await page.waitForTimeout(3000);
 
   // Check for no results
   const noResults = await page.locator(SELECTORS.SEARCH.NO_RESULTS).isVisible().catch(() => false);
