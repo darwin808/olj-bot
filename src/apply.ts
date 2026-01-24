@@ -44,6 +44,13 @@ export async function applyToJob(
       return { success: false, alreadyApplied: false, skipped: true, employerName };
     }
 
+    // Check if job is closed
+    const jobClosed = await page.locator('text="This job has been closed"').first().isVisible().catch(() => false);
+    if (jobClosed) {
+      logger.info(`Job closed: ${job.title} - skipping`);
+      return { success: false, alreadyApplied: false, skipped: true, employerName };
+    }
+
     // Check if already applied - look for "Applied" button or text
     const alreadyAppliedBtn = await page.locator('button:has-text("Applied")').first().isVisible().catch(() => false);
     const alreadyAppliedText = await page.locator('text="Date Applied"').first().isVisible().catch(() => false);
