@@ -43,6 +43,7 @@ async function main(): Promise<void> {
         searchTerm,
         MAX_JOBS_TO_FETCH,
         config.blockedEmployers,
+        config.blockedSubjects,
         state
       );
 

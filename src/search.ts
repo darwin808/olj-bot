@@ -2,7 +2,7 @@ import { Page } from 'playwright';
 import { logger } from './logger';
 import { SELECTORS, URLS } from './selectors';
 import { takeScreenshot, waitAndRetry } from './browser';
-import { isBlockedEmployer } from './config';
+import { isBlockedEmployer, isBlockedSubject } from './config';
 import { StateManager } from './state';
 
 export interface Job {
@@ -18,6 +18,7 @@ export async function searchJobs(
   searchTerm: string,
   limit: number,
   blockedEmployers: string[],
+  blockedSubjects: string[],
   state: StateManager
 ): Promise<Job[]> {
   logger.info(`Searching for: "${searchTerm}" (limit: ${limit})`);
@@ -59,6 +60,12 @@ export async function searchJobs(
     // Skip if blocked employer
     if (isBlockedEmployer(job.employerName, blockedEmployers)) {
       logger.debug(`Skipping ${job.id} - blocked employer: ${job.employerName}`);
+      continue;
+    }
+
+    // Skip if blocked subject
+    if (isBlockedSubject(job.title, blockedSubjects)) {
+      logger.debug(`Skipping ${job.id} - blocked subject: ${job.title}`);
       continue;
     }
 

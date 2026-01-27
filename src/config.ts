@@ -8,6 +8,7 @@ dotenvConfig();
 export interface Config {
   searchTerms: string[];
   blockedEmployers: string[];
+  blockedSubjects: string[];
   proposal: string;
   jobsPerSearchTerm: number;
   credentials: {
@@ -37,6 +38,7 @@ export function loadConfig(): Config {
   const config: Config = {
     searchTerms: configJson.searchTerms || [],
     blockedEmployers: (configJson.blockedEmployers || []).map((e: string) => e.toLowerCase()),
+    blockedSubjects: (configJson.blockedSubjects || []).map((s: string) => s.toLowerCase()),
     proposal: configJson.proposal || '',
     jobsPerSearchTerm: configJson.jobsPerSearchTerm || 5,
     credentials: {
@@ -47,7 +49,7 @@ export function loadConfig(): Config {
     dryRun: process.env.DRY_RUN === 'true'
   };
 
-  logger.info(`Config loaded: ${config.searchTerms.length} search terms, ${config.blockedEmployers.length} blocked employers`);
+  logger.info(`Config loaded: ${config.searchTerms.length} search terms, ${config.blockedEmployers.length} blocked employers, ${config.blockedSubjects.length} blocked subjects`);
   logger.info(`Mode: ${config.dryRun ? 'DRY RUN' : 'LIVE'}, Headless: ${config.headless}`);
 
   return config;
@@ -56,4 +58,9 @@ export function loadConfig(): Config {
 export function isBlockedEmployer(employerName: string, blockedList: string[]): boolean {
   const normalizedName = employerName.toLowerCase().trim();
   return blockedList.some(blocked => normalizedName.includes(blocked));
+}
+
+export function isBlockedSubject(title: string, blockedList: string[]): boolean {
+  const normalizedTitle = title.toLowerCase().trim();
+  return blockedList.some(blocked => normalizedTitle.includes(blocked));
 }
