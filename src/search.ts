@@ -141,14 +141,48 @@ async function extractJobsFromPage(page: Page, searchTerm: string): Promise<Job[
 // Extract employer name from job page
 export async function getEmployerFromJobPage(page: Page): Promise<string> {
   try {
+    // Try 1: Look for company/employer name elements
     const employerElement = page.locator(SELECTORS.JOB_PAGE.EMPLOYER).first();
     const visible = await employerElement.isVisible().catch(() => false);
     if (visible) {
       const name = await employerElement.textContent();
-      return (name || 'Unknown').trim();
+      if (name && name.trim() && name.trim() !== 'Unknown') {
+        return name.trim();
+      }
     }
+
+    // Try 2: Look for "Contact Person" or "Member" info in the page
+    // OnlineJobs.ph displays employer/contact info like "Contact Person: Irina"
+    const pageText = await page.content().catch(() => '');
+
+    // Try to find contact person
+    const contactMatch = pageText.match(/Contact\s*Person\s*:?\s*([^<\n]+)/i);
+    if (contactMatch && contactMatch[1]) {
+      const contactName = contactMatch[1].trim();
+      if (contactName && contactName.length > 0 && contactName.length < 100) {
+        return contactName;
+      }
+    }
+
+    // Try 3: Look for common company/employer display patterns
+    const companyPatterns = [
+      /(?:Company|Employer|Organization|Posted by)\s*:?\s*([^<\n]+)/i,
+      /class="(?:company|employer|contact)(?:-name)?[^"]*"[^>]*>([^<]+)</i,
+    ];
+
+    for (const pattern of companyPatterns) {
+      const match = pageText.match(pattern);
+      if (match && match[1]) {
+        const name = match[1].trim();
+        if (name && name.length > 0 && name.length < 100) {
+          return name;
+        }
+      }
+    }
+
   } catch {
-    // Ignore
+    // Ignore errors and try fallbacks
   }
+
   return 'Unknown';
 }
