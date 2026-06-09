@@ -9,13 +9,16 @@ on:
 jobs:
   apply:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24'
+          # Pinned: Node 24.16.0 hangs Playwright's browser unzip (download completes,
+          # extraction deadlocks). 24.15.0 is the last known-good runner toolcache version.
+          node-version: '24.15.0'
           cache: 'npm'
 
       - name: Install dependencies
