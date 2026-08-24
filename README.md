@@ -5,7 +5,7 @@ Auto-apply to jobs on OnlineJobs.ph. Searches specified terms and applies to top
 ## Setup
 
 ```bash
-npm install
+npm install or bun install
 npx playwright install chromium
 ```
 
