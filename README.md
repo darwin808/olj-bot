@@ -51,6 +51,7 @@ Before running, you MUST update `src/selectors.ts` with actual DOM selectors fro
 5. Update `src/selectors.ts`
 
 ## Output
+-
 
 - **Logs**: `logs/automation-{date}.log`
 - **Screenshots**: `screenshots/` and `screenshots/errors/`
